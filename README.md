@@ -1,79 +1,132 @@
-# SeqForensics
+<div align="center">
 
-**A benchmark dataset and baseline for detecting the *order* of sequential deepfake manipulations.**
+# 🎭 SeqForensics
 
-Most deepfake datasets label a clip with a single manipulation type. In practice, forensically
-"interesting" videos are rarely touched once — they pass through a **chain** of edits (e.g. a face
-swap, followed by a re-enactment pass, followed by a neural-texture cleanup) before they are
-re-uploaded. SeqForensics is built to study exactly that: given a video, can a model recover **which**
-manipulations were applied **and in what order**?
+### A benchmark dataset for detecting the *order* of chained deepfake manipulations
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Python 3.9+](https://img.shields.io/badge/python-3.9%2B-blue.svg)](requirements.txt)
+[![Dataset Size](https://img.shields.io/badge/clips-6%2C000-brightgreen)](docs/dataset_structure.md)
+[![Sequence Classes](https://img.shields.io/badge/sequence%20classes-60-orange)](docs/dataset_structure.md)
+[![Base Data](https://img.shields.io/badge/base%20data-FaceForensics%2B%2B-lightgrey)](https://github.com/ondyari/FaceForensics)
+
+</div>
 
 ---
 
-## What's in this repo
+Most deepfake datasets ask *"what manipulation is this?"* — one clip, one label. In the wild,
+forensically interesting videos rarely stop at one edit. They pass through a **chain**: a face
+swap, then a re-enactment pass, then a cleanup pass, before they're ever re-uploaded.
 
-This repository supports **reproducibility of the SeqForensics dataset** — the generation pipeline,
-the validation pipeline, and the metadata schema. It does **not** host the paper, slides, poster, or
-project video, and it does not redistribute raw FaceForensics++ source video.
+**SeqForensics** is built around the harder question: given a clip, can a model recover **which**
+manipulations were applied, **in what order**?
+
+<div align="center">
+
+```mermaid
+flowchart LR
+    A["🎬 Source clip\n(FaceForensics++)"] --> B["Manipulation 1"]
+    B --> C["Manipulation 2"]
+    C --> D["Manipulation 3"]
+    D --> E["🎞️ Stitched output clip"]
+    E --> F["📋 Manifest entry\n(source_id, sequence, num_frames)"]
+
+    style A fill:#e8f0fe,stroke:#4285f4
+    style E fill:#fce8e6,stroke:#ea4335
+    style F fill:#e6f4ea,stroke:#34a853
+```
+
+</div>
+
+---
+
+## 📑 Table of contents
+
+- [At a glance](#-at-a-glance)
+- [Manipulation vocabulary](#-manipulation-vocabulary)
+- [How the dataset is built](#%EF%B8%8F-how-the-dataset-is-built)
+- [Repository structure](#-repository-structure)
+- [Metadata schema](#-metadata-schema)
+- [Validation](#-validation)
+- [Quick start](#-quick-start)
+- [Baseline task](#-baseline-task)
+- [Data availability & licensing](#-data-availability--licensing)
+- [Citation](#-citation)
+
+---
+
+## 🔍 At a glance
+
+<div align="center">
 
 | | |
-|---|---|
+|:---:|:---:|
 | **Base data source** | [FaceForensics++](https://github.com/ondyari/FaceForensics) |
-| **Generated clips** | 6,000 |
-| **Manipulation types** | 5 |
-| **Ordered sequences per clip** | 3 manipulations applied in sequence |
-| **Distinct sequence classes** | 60 (all ordered permutations of 3-out-of-5 manipulation types) |
-| **Frames per source clip** | ~300–400 |
+| **Generated clips** | `6,000` |
+| **Manipulation types** | `5` |
+| **Manipulations per clip** | `3`, chained in sequence |
+| **Distinct sequence classes** | `60` (ordered permutations, P(5,3)) |
+| **Frames per source clip** | `~300–400` |
 | **Split strategy** | Source-leakage-free (train / val / test) |
 
+</div>
+
 ---
 
-## Manipulation vocabulary
+## 🧩 Manipulation vocabulary
 
-Every clip is built by chaining **3** of the following **5** manipulation types, drawn from the
-standard FaceForensics++ manipulation set:
+Each clip chains **3 of 5** manipulation types drawn from the standard FaceForensics++ set:
 
-| Code | Manipulation |
-|:---:|---|
-| `DF`  | Deepfakes |
-| `F2F` | Face2Face |
-| `FS`  | FaceSwap |
-| `FSh` | FaceShifter |
-| `NT`  | NeuralTextures |
+| Code | Manipulation | ID |
+|:---:|---|:---:|
+| 🟦 `DF`  | Deepfakes | `0` |
+| 🟩 `F2F` | Face2Face | `1` |
+| 🟨 `FS`  | FaceSwap | `2` |
+| 🟧 `FSh` | FaceShifter | `3` |
+| 🟥 `NT`  | NeuralTextures | `4` |
 
-A clip's label is stored as an ordered, pipe-separated string, e.g. `FS\|FSh\|DF`, which maps to a
-fixed integer sequence via a single vocabulary defined once in code (no re-derivation, no risk of the
-generation and validation scripts disagreeing on label order).
+Labels are stored as ordered, pipe-separated strings — e.g. `FS|FSh|DF` — mapped through **one**
+vocabulary table shared by every script in this repo, so generation and validation can never
+silently disagree on label order.
 
-Since order matters, the label space is **ordered permutations**, not combinations:
+Because order matters, the label space is **permutations, not combinations**:
+
+<div align="center">
 
 ```
-P(5, 3) = 5 × 4 × 3 = 60 distinct sequence classes
+P(5, 3)  =  5 × 4 × 3  =  60 distinct sequence classes
 ```
 
-This is what makes SeqForensics harder than "what manipulation is this?" — a model has to reason
-about **temporal/compositional structure**, not just detect an artifact.
+</div>
+
+That's what makes the task hard — a model has to reason about *compositional, temporal structure*,
+not just spot a single artifact.
 
 ---
 
-## Dataset construction
+## ⚙️ How the dataset is built
 
-1. **Source selection** — clean, unmanipulated source clips are pulled from FaceForensics++.
-2. **Sequence assignment** — each source clip is assigned one or more of the 60 valid ordered
-   3-manipulation sequences.
-3. **Chained manipulation + stitching** — each manipulation in the sequence is applied on top of the
-   previous stage's output, then the three stages are stitched into a single output clip.
-4. **Manifest recording** — every generated clip is logged with its source ID, output path, applied
-   sequence, and frame count.
-5. **Validation pass** — every one of the 6,000 generated clips is checked for corruption, playback
-   integrity, frame-count consistency, and label correctness (see [`validation/`](validation/)).
-6. **Split assignment** — splits are built **per source ID**, not per clip. All sequence variants
-   generated from the same source video are forced into the same split, so a model can't cheat by
-   memorizing source-video identity instead of learning manipulation structure.
+```mermaid
+flowchart TD
+    S["Select source clips\nfrom FaceForensics++"] --> Q["Assign each source\none of 60 valid\nordered sequences"]
+    Q --> M["Apply manipulation 1 → 2 → 3\n(chained, each stage builds\non the previous output)"]
+    M --> ST["Stitch stages into\na single output clip"]
+    ST --> LOG["Log to manifest:\nsource_id · sequence · num_frames"]
+    LOG --> V["Validate all 6,000 clips\n(integrity, frame count, labels)"]
+    V --> SP["Assign train/val/test\nby source_id, not by clip"]
+
+    style S fill:#e8f0fe,stroke:#4285f4
+    style V fill:#fef7e0,stroke:#f9ab00
+    style SP fill:#e6f4ea,stroke:#34a853
+```
+
+**Why split by `source_id`?** All sequence variants generated from the *same* source video are
+forced into the *same* split. Otherwise a model can cheat by memorizing the source video's identity
+instead of learning the manipulation sequence itself.
 
 ---
 
-## Repository structure
+## 📁 Repository structure
 
 ```text
 SeqForensics/
@@ -91,15 +144,12 @@ SeqForensics/
     └── dataset_structure.md    # metadata schema, naming conventions, folder layout
 ```
 
-> **Note:** `code/generate_dataset.py`, `code/validate_dataset.py`, and
-> `metadata/sample_metadata.csv` are added separately alongside this scaffold — this drop contains
-> the documentation, licensing, and validation-summary files.
+> `code/*.py` and `metadata/sample_metadata.csv` ship alongside this scaffold — this drop covers
+> documentation, licensing, and the validation-summary report.
 
 ---
 
-## Metadata schema
-
-Each row in the manifest describes one generated clip:
+## 🗂️ Metadata schema
 
 | Field | Description |
 |---|---|
@@ -108,20 +158,21 @@ Each row in the manifest describes one generated clip:
 | `sequence` | Pipe-separated manipulation order, e.g. `FS\|FSh\|DF` |
 | `num_frames` | Frame count of the generated clip |
 
-Full field-by-field documentation lives in [`docs/dataset_structure.md`](docs/dataset_structure.md).
+Full field-by-field docs, naming convention, and the splitting algorithm live in
+[`docs/dataset_structure.md`](docs/dataset_structure.md).
 
 ---
 
-## Validation summary
+## ✅ Validation
 
-Every one of the 6,000 generated clips was checked for file integrity, decodability, expected frame
-count, and correct sequence-label formatting before being included in the final manifest. See
-[`validation/dataset_validation_summary.txt`](validation/dataset_validation_summary.txt) for the
-full report.
+All 6,000 generated clips are checked for file integrity, decodability, expected frame count, and
+correct sequence-label formatting before entering the final manifest.
+
+📄 Full report: [`validation/dataset_validation_summary.txt`](validation/dataset_validation_summary.txt)
 
 ---
 
-## Usage
+## 🚀 Quick start
 
 ```bash
 # 1. Install dependencies
@@ -142,26 +193,47 @@ python code/validate_dataset.py \
 
 ---
 
-## Baseline task
+## 🧠 Baseline task
 
-The manifest produced by this pipeline is directly consumable by an order-prediction baseline: a
-shared-weight CNN frame encoder + temporal self-attention model with one classification head per
-sequence position, trained with a source-leakage-free split. This dataset repo does not host that
-training code — it exists to make the **data** reproducible.
+The manifest this pipeline produces is directly consumable by an **order-prediction** baseline: a
+shared-weight CNN frame encoder + temporal self-attention model, with one classification head per
+sequence position, trained on the source-leakage-free split.
+
+```mermaid
+flowchart LR
+    V["Video clip\n(T sampled frames)"] --> CNN["Shared CNN\nframe encoder"]
+    CNN --> TF["Temporal\nself-attention"]
+    TF --> H1["Head: step 1"]
+    TF --> H2["Head: step 2"]
+    TF --> H3["Head: step 3"]
+
+    style V fill:#e8f0fe,stroke:#4285f4
+    style TF fill:#fef7e0,stroke:#f9ab00
+```
+
+This dataset repo doesn't host the training code — it exists to make the **data** reproducible.
 
 ---
 
-## Data availability & licensing
+## 🔐 Data availability & licensing
 
-- **This repository's code** (generation + validation scripts, docs) is released under the license
-  in [`LICENSE`](LICENSE).
-- **Raw FaceForensics++ source video is not redistributed here.** Access to FaceForensics++ requires
-  agreeing to its own terms — see the [official repository](https://github.com/ondyari/FaceForensics)
-  before generating or sharing derived clips.
-- Generated sequential clips are derivative of FaceForensics++ source material; check FF++'s
+- **This repository's code** (generation + validation scripts, docs) is released under
+  [`LICENSE`](LICENSE) (MIT).
+- **Raw FaceForensics++ source video is not redistributed here.** Access requires agreeing to FF++'s
+  own terms — see the [official repository](https://github.com/ondyari/FaceForensics) before
+  generating or sharing derived clips.
+- Generated sequential clips are derivative of FaceForensics++ source material — check FF++'s
   redistribution terms before publishing the full generated dataset.
 
-## Citation
+---
+
+## 📚 Citation
 
 If you use this dataset construction pipeline, please cite this repository and the original
 FaceForensics++ paper (Rössler et al., ICCV 2019).
+
+<div align="center">
+
+*Built for reproducible deepfake-sequence forensics research.*
+
+</div>
