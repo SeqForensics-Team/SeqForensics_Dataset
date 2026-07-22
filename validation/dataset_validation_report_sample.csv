@@ -1,0 +1,6 @@
+video_name,source_video,sequence,file_exists,file_size_bytes,opens_successfully,first_frame_decoded,middle_frame_decoded,last_frame_decoded,expected_frames,actual_frames,frame_count_match,fps,width,height,validation_status,failure_reason
+000_FS_FSh_DF.mp4,000.mp4,FaceSwap->FaceShifter->DeepFake,True,608705,True,True,True,True,303,303,True,25.0,640,480,PASS,
+000_FS_FSh_NT.mp4,000.mp4,FaceSwap->FaceShifter->NeuralTextures,True,608726,True,True,True,True,303,303,True,25.0,640,480,PASS,
+000_FS_FSh_F2F.mp4,000.mp4,FaceSwap->FaceShifter->Face2Face,True,607356,True,True,True,True,303,303,True,25.0,640,480,PASS,
+000_FS_DF_FSh.mp4,000.mp4,FaceSwap->DeepFake->FaceShifter,True,613076,True,True,True,True,303,303,True,25.0,640,480,PASS,
+000_FS_DF_NT.mp4,000.mp4,FaceSwap->DeepFake->NeuralTextures,True,602828,True,True,True,True,303,303,True,25.0,640,480,PASS,
