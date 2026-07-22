@@ -1,6 +1,6 @@
-video_name	source_video	sequence	num_frames	
-124_FS_FSh_DF.mp4	124.mp4	FaceSwap->FaceShifter->DeepFake	318	
-124_FS_DF_FSh.mp4	124.mp4	FaceSwap->DeepFake->FaceShifter	318	
-124_FSh_FS_DF.mp4	124.mp4	FaceShifter->FaceSwap->DeepFake	318	
-124_FSh_DF_FS.mp4	124.mp4	FaceShifter->DeepFake->FaceSwap	318	
-124_DF_FS_FSh.mp4	124.mp4	DeepFake->FaceSwap->FaceShifter	318	
+video_name,source_video,sequence,num_frames
+124_FS_FSh_DF.mp4,124.mp4,FaceSwap->FaceShifter->DeepFake,318
+124_FS_DF_FSh.mp4,124.mp4,FaceSwap->DeepFake->FaceShifter,318
+124_FSh_FS_DF.mp4,124.mp4,FaceShifter->FaceSwap->DeepFake,318
+124_FSh_DF_FS.mp4,124.mp4,FaceShifter->DeepFake->FaceSwap,318
+124_DF_FS_FSh.mp4,124.mp4,DeepFake->FaceSwap->FaceShifter,318
