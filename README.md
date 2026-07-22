@@ -191,27 +191,6 @@ python code/validate_dataset.py \
     --report-out validation/dataset_validation_report.csv
 ```
 
----
-
-## 🧠 Baseline task
-
-The manifest this pipeline produces is directly consumable by an **order-prediction** baseline: a
-shared-weight CNN frame encoder + temporal self-attention model, with one classification head per
-sequence position, trained on the source-leakage-free split.
-
-```mermaid
-flowchart LR
-    V["Video clip\n(T sampled frames)"] --> CNN["Shared CNN\nframe encoder"]
-    CNN --> TF["Temporal\nself-attention"]
-    TF --> H1["Head: step 1"]
-    TF --> H2["Head: step 2"]
-    TF --> H3["Head: step 3"]
-
-    style V fill:#e8f0fe,stroke:#4285f4
-    style TF fill:#fef7e0,stroke:#f9ab00
-```
-
-This dataset repo doesn't host the training code — it exists to make the **data** reproducible.
 
 ---
 
