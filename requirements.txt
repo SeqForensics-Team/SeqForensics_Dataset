@@ -1,0 +1,9 @@
+# Core dataset generation / validation
+opencv-python>=4.8
+numpy>=1.24
+pandas>=2.0
+tqdm>=4.66
+
+# Baseline model + training pipeline (order-prediction benchmark)
+torch>=2.1
+torchvision>=0.16
