@@ -1,0 +1,60 @@
+
+============================================================
+SEQFORENSICS DATASET VALIDATION SUMMARY
+============================================================
+
+STRUCTURAL VALIDATION
+
+Expected videos:              6000
+Metadata records:             6000
+Unique generated videos:      6000
+Unique source videos:         100
+Unique sequences:             60
+
+Duplicate rows:               0
+Duplicate filenames:          0
+Missing metadata values:      0
+
+Sources with 60 sequences:    100/100
+Sources with wrong count:     0
+Sequences with wrong count:   0
+Sequence parse errors:        0
+
+------------------------------------------------------------
+
+PHYSICAL VIDEO VALIDATION
+
+Expected videos:              6000
+Files found:                  6000
+Videos opened successfully:   6000
+
+First frames decoded:         6000
+Middle frames decoded:        6000
+Last frames decoded:          6000
+
+Frame counts matched:         6000
+
+Videos PASSED:                6000
+Videos FAILED:                0
+
+------------------------------------------------------------
+
+FRAME STATISTICS
+
+Average frames:               394.51
+Minimum frames:               287
+Maximum frames:               695
+Standard deviation:           101.09
+
+------------------------------------------------------------
+
+Structural validation:
+PASS
+
+File-level validation:
+PASS
+
+FINAL DATASET VALIDATION:
+PASS
+
+============================================================
